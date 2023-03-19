@@ -57,7 +57,6 @@ With Ethernet access, users typically have 100 Mbps or 1 Gbps access to the Ethe
 
 ---
 #### Wireless access networks
----
 **Shared** wireless access networks connects end system to router via base station aka "AP(access point)"
 
 ---
@@ -93,5 +92,36 @@ Radio link types:
     * 270 msec end-end delay(higher compared to other types)
 
 ### The network core
-mesh of interconnected routers
-#### circuit switches
+- Hub: layer 1 (physical layer), where it rebroadcast the data to every port that have a device connected to it, which creates security concern because the devices not intened to reach the data now receive it as well. Moreover, it wastes bandwidth. 
+- Switch: layer 2 (data link layer), where it routes frames based on MAC addresses(of connected devices). When a data packet is sent to a switch, it's directed to the intended destination port.
+- Router: layer 3 (network layer), where it routes packets based on IP addresses. Switch and Hub are used to exchange data within **local network**. To exchange data outside the local network, IP is needed to be recorded. Router plays as the gateway of a network.
+![](https://i.imgur.com/gfUFhJX.png)
+
+
+Mesh of interconnected routers which is highlighted by blue and shaded line.
+![](https://i.imgur.com/cCT82EZ.png)
+They are two fundamental approaches to moving data through a network of links and switches: **circuit switching** and **packet switching**
+
+Packet: Smaller chunks of data divided from long messages
+
+---
+#### circuit switching
+When a "call" is made, the resources(cpu, buffer space, bandwidth etc) needed along the transporting path is **reserved**.
+* pros
+    * Dedicated resources guarantee constant transport rate  
+    * The transportations of data won't interfere one another and cause any delay
+    * Used in online meeting and streaming.
+* cons
+    * Network resouces are divided into pieces and allocated to "call". However, if the call didn't send any data in the duration, the resource pieces are wasted.  
+There are two approaches to implementing circuit switching: **Frequency-division multiplexing(FDM)** and **Time-division multiplexing(TDM)**
+![](https://i.imgur.com/UUMMk1l.png)
+
+**Quiz:**
+![](https://i.imgur.com/5e0PPsC.png)
+bandwidth: 1.536/24 = 0.064Mbps = 64Kbps  
+640,000 bits = 640Kbps  
+total time: 640/64 + 0.5 = 10.5 sec
+
+---
+#### packet switching
+Cut data into small packets and tranfer them one at a time.
