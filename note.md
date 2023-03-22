@@ -123,5 +123,98 @@ bandwidth: 1.536/24 = 0.064Mbps = 64Kbps
 total time: 640/64 + 0.5 = 10.5 sec
 
 ---
-#### packet switching
-Cut data into small packets and tranfer them one at a time.
+#### Packet Switching
+Cut data into small packets and tranfer them one at a time. Each packet uses the full link bandwidth. **No idle resources**.  
+Network congestion: When aggregate resource demand outnumber the amount available, packets should **wait**( **uncertain delay** might happen!) for link use in a **queue**( there might be a **drop** of data because of limited space of  the queues) in the **router buffers**.  
+**Store and Foward**: routers receive complete packet before forwrding to next hop. The more hops you get, the longer transmission delays  
+
+For example:  
+L bits per packet  
+R bps link transmission rate  
+![](https://i.imgur.com/nKELWpr.png)
+end to end delay = L/R(from source to router) + L/R(from router to destination)
+
+**Store and Foward**:
+1. Why should we divide the data into **small packets** rather than **big packets**?  
+For example: L = 7.5Mbits R = 1.5Mbps  
+If the whole data is sent without division, the total delay = 3L/R = 15sec  
+If the data is broken into 5000 packets, the total delay reduced to 5.002sec because each link works in parallel.
+![](https://i.imgur.com/VqHmFh4.png)
+2. Why store and foward?  
+Every router has a table to record the id of packet and its destination. Router has to check the entire packet first and then send it to appropriate router.
+![](https://i.imgur.com/W3ShuU3.png)
+
+
+
+
+
+#### CS v.s. PS
+CS: bandwidth devided into pieces & dedicated allocation & resource reservation  
+PS: mixing packets and sharing
+PS is more efficient than CS, allowing more users to use network. **Network is based on PS**.
+#### Network of networks
+End systems connect to Internet via **access ISPs**(Internet Service Providers) and access ISPs must be interconnected so that two hosts in different end system can send packets to each other, resulting network of networks. As time passby, economics drives the evolution.
+
+1. connect each access ISP to every other  
+When the internet grow, n extra links are required, which is too expensive to maintain.
+![](https://i.imgur.com/DgEj1LU.png)
+
+2. connect each access ISP to one global transit ISP  
+![](https://i.imgur.com/fVYbJZB.png)
+
+    Global ISP provides transit service to every access net.  
+![](https://i.imgur.com/DwCgChp.png)
+
+    Competitors emerge as the business growing profitable, so here comes numeral global ISPs, which leads to the problem of interconnection of global ISPs. There are two ways: through **IXP(internet exchange point) or peering link**.  
+    **IXP** is typically set up by NPO or government act as the third party to maintain the operation of internet to avoid commercial companies' domination.  
+![](https://i.imgur.com/r9LMgAg.png)
+
+    As size of access net communities grow, regional net shows up. Regional net earn marginal profit by offering lower price to access net and negotiating with global ISP with lower price. GLobal ISP now only has to face one customer and takes the deal happily.
+
+3. content provider network  
+Content provider (e.g., Google, Microsoft, Cloud service company) who has data centers around the world might want to connect access net to their data center, which makes them just as big as global ISPs.  
+FYI: Anyone hosting their own content can be content provider(e.g., NTU, Polly's course website) but in smaller scale.
+### Delay and loss in packets-switched networks
+
+**Delay**: Aside from transmission delay mentioned above, there is queueing delay in PS networks because packet in the queue has to wait for turn.  
+**Drop**: If there are **no free buffers** in the router, arriving packets might be dropped.  
+
+#### Four sources of packet delay
+1. Nodal processing  
+    a. check bit error  
+    b. determine output link by router's algorithm
+2. Queueing  
+R = link beandwidth(bps)  
+L = packet size(bits)  
+a = average packet arrival rate  
+traffic intensity = $\dfrac{L*a(average\ bits\ arrival\ rate)}{R(outgoing\ traffic\ rate)}$  
+La/R ~0: Incoming rate is very low or outgoing rate is very high. Queueing delay is very small.   
+La/R =1: delay become large  
+La/R >1: more bits coming in than bits going out. When time goes on, newly arrival packet has to wait longer and longer, queueing delay infinite.   
+![](https://i.imgur.com/7JKUESZ.png)
+
+3. Transmission  
+L/R  
+4. Propagation  
+d = length of physical link  
+s = propagation speed in medium  
+propagation delay = d/s
+![](https://i.imgur.com/IVQ1VgY.png)
+
+#### Real internet delays and routes
+**traceroute program**(or **tracert** in cmd): provides delay
+measurement from source to router along end-end
+Internet path towards destination. For all i:
+* sends three packets that will reach router i on path towards destination
+* router i will return packets to sender
+* sender times interval between transmission and reply.
+![](https://i.imgur.com/SkUfU9m.png)
+1. Why the three delay measurements are not the same?
+- Because the measurements can be affected by the congestion of router.
+2. Why delay measurements to hop#10 are longer than hop#11? 
+- Because the path to router might change, the path to 10 can be totally diffent from the path to hop#11. 
+
+**throughput**: rate at which bits transferred between **sender and receiver**.
+
+### Protocal layers, service models
+![](https://i.imgur.com/FQ9ZGYx.png)
