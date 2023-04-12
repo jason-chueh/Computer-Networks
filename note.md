@@ -218,3 +218,139 @@ Internet path towards destination. For all i:
 
 ### Protocal layers, service models
 ![](https://i.imgur.com/FQ9ZGYx.png)
+
+### Encapsulation
+![](https://i.imgur.com/YT8aHFi.png)
+**Source:** When the message is passed to the next layer, a header of that certain layer is appended. The header allows the certain layer of source side to communicate with destination side by decyhering the heading.  
+**Router:** 
+1. From Physical layer to Network layer  
+    Each layer inteprets the corresponding header to execute the missions they are assigned, and then passes the remaining message to the next layer.
+2. From Network layer to Physical layer  
+    Each layer, again, appends new header to message and pass down to the next layer.  
+
+**Destination:**  
+Similar to router, layers decypher the corresponding headers and pass the remaining message down.
+
+## Chap2 Application Layer  
+### Application architectures
+#### Client-server
+**Server:**  
+**The process that waits to be contacted to begin the session.**
+Because server has a **fixed, well-knowned IP addresses** and is **a always-on host**, a client can always contact the server by sending a packet to the server's IP addresses.  
+**Client:**  
+**The process that initiates the communication.** The hosts who request servers for services. Noted that two clients do not directly communicate with each other with client-server architecture.
+#### Peer-to-peer
+1. There is no always-on server and arbitrary end systems directly communicate with each others.   
+2. Peers request service from other peers and provide service in turn to them.  
+3. Peers are intermittenly connected and change IP addresses, leading to complex management  
+#### Hybrid of client-server and P2P
+Take Skype as an instance:  
+There is a centralized server providing service of finding address of remote party. After infromed address, an end system can make a call directly to another peer through P2P system.  
+
+### Socket
+A process sends/receives messages to/from **socket**.  
+**Socket is the interface between the application layer and transport layer within a host.**
+#### Process is **program in execution**
+![](https://i.imgur.com/pIuApK8.png)  
+There are four sections in a process:
+1. Text section - the executable code(fixed sizes)
+2. Data section - global variables(fixed sizes)
+3. Heap section - memory that is dynamically allocated during program runtime
+4. Stack section - temporary data storage when invoking functions(such as function parameters,return addresses and local variables)  
+
+![](https://i.imgur.com/Cvs1nTP.png)
+There might be several processes on a single host, so IP address is not enough to identify the process that you sent messages to or receive messages from.  
+**Identifier** includes **both IP address and port numbers** associated with process on host.  
+There are some well-known services running on some certain prot numbers, such as HTTP server:80 and mail server: 25.  
+For example, If you want to send HTTP message to gaia.cs.umass.edu web server, the identifier should be 128.119.245.12(IP address) + 80(port number)  
+
+### Quality of service
+1. Data integrity  
+    100% reliable data tranfer without any data loss is required by some service, such as web transavtion and file transfer.
+2. Timing  
+    Low delay is required.
+3. Throughput(流通量)  
+    Minimum amount of bandwidth is required to be effective.  
+    **Elastic** describes those app who do not require throughput.  
+
+![](https://i.imgur.com/flblVAE.png)  
+
+###  Internet transport protocals services  
+#### TCP service
+1. reliable transport - no data loss
+2. flow control - sender won't overwhelm receiver
+3. congestion control - confine sender when network overload.
+4. **does not provide** - timing, minimum throughput guarantee, security
+5. connection-oriented - setup required between server and client processes
+#### UDP service
+1. unreliable data transfer
+2. does not provide - reliablity, flow control, congestion control, timing, minimum throughput guarantee, security.
+
+**The choice between UDP and TCP should be based on the trade-off between reliability and delay.**  
+For example, players in PUBG could not suffer high delay in realtime gunfights, so PUBG should choose UDP protocal. However, the trading game like FarmVille might use TCP because every transaction needs to be executed and recorded.
+Concurrency is also in practice. Games like RO combine the realtime boss fight and trading, so the concurrency might be the best choice. When fighting, use UDP. Otherwise, use TCP.
+
+
+### Secure transport
+#### Secure TCP
+
+TCP and UDP have no encryption mechanisms, leading the passwords traverse internet in cleartext. Thus, **Secured Socket Layer(SSL)** is needed.
+#### SSL
+1. provides encrypted TCP connection
+    SSL layer is underneath the application layers, the message will go through application layers' protocal, SSL and TCP 
+2. ensures data integrity  
+    SSL makes sure the message can not be interpretted by the third party.
+3. offer end-point authentication  
+    SSL can ensure the end system you are connected to is indeed the person you expecting  
+
+#### Public Key System
+**Public Key:** Key for a end system that is accessible for everyone.  
+**Private Key:** The key that is known only by its owner.  
+
+**Mechanism:** Let's show how a communication between a sender and receiver is encrypted.  First, the sender ask receiver the public key certificate. Then, the sender encrypts the message(MS: master secret) through a function that involves **public key** of receiver as parameter. The encrypted message(EMS: encrypted master secret) is sent to the receiver and receiver decyphers the EMS by a certain function which involves the **private key** as parameter. In this way, the communication is protected because only the receiver has private key and can decrypts the EMS.  
+![](https://i.imgur.com/Vq52DJm.png)  
+### Web and HTTP
+A web page usually consists of one HTML and other objects.  
+HTTP(HyperText Tranfer Protocol) defines the structure of these messages and how the client and server exchange the messages.
+1. uses TCP as its underlying tranport protocol
+2. maintains no past requests of the clients, called as **stateless protocol**.
+#### HTTP connections
+1. non-persistent HTTP (HTTP 0.9)
+    1. At most one object sent over TCP connection,and then the connection is closed
+    2. Downloading multiple objects requires multiple connections  
+    ![](https://i.imgur.com/rapcvBv.png)  
+    ![](https://i.imgur.com/BbCUE5A.png)  
+    3. response time
+    ![](https://i.imgur.com/0CgCaua.png)
+
+2. persistent HTTP + pipelining (HTTP 1.1)
+    1. Multiple objects can be sent over single TCP connection between client and server.
+    2. Server leaves connection open after sending response
+    3. Client sends all the requests as soon as possible(which is the meaning of pipelining)
+    4. Three RTT is required: estabishing the connection, downloading the first response item(HTML) and downloading the rest objects(11 pic).
+#### Quiz 9
+![](https://i.imgur.com/ajjzHXp.png)  
+1. 12RTT(TCP connection + request and response)*6
+2. 3RTT(TCP connection + downloading HTML + downloading the rest)
+3. 7RTT(TCP connection + downloading HTML + one for each new reference object)
+4. 4RTT(2 for TCP + HTML; 2 for parallel TCP + new reference object)
+
+#### HTTP request message
+![](https://i.imgur.com/OQFxwUy.png)
+The request line has three fields: **the method field**(GET, POST, HEAD, PUT and DELETE), **the URL field**(the object that you try to refer to) and the **HTTP version field**.  
+The header lines in the figure above include **Host**(specify the host the TCP connection built on)
+,**User-Agent**(specify the browser type that is making the request) and **Keep-Alive**(specify how many seconds that the connection should last after receiving last response)  
+![](https://i.imgur.com/vtkHyCb.png)
+
+#### The method types
+1. GET
+    Request an object inditified in URL field
+2. POST
+    1. Request an object inditified in URL field
+    2. Input is uploaded to server in **entity body**
+3. HEAD
+    Ask essential information of an object inditified in URL field.
+4. PUT
+    Upload file in entity body to path specified in URL field.
+5. DELETE
+    Delete file specified in the URL field.
