@@ -513,5 +513,225 @@ The trackers randomly selects a subset of peers to Amy(the new peer),and hence s
 2. Tits for tats  
     Amy gives priority to the neighbor that send her data at the highest rate, encouraging reciprocation among peers. In this way, the free riders are marginalized in BitTorrent, and the more you supply, the more data you can get from other peers. 
 
+### Dynamic Adaptive Streaming over HTTP(DASH)
+
+In HTTP Streaming, the videos are stored in server and sent through TCP connection in response to "GET" request.  
+However, the shortcoming is that all clients with different available amount of bandwidth receive the same encoding(quality) of the video.  
+In DASH, the video is encoded into several versions. The bigger amount of bandwidth you get, the higher quality version of chunks you receive.  
+DASH decides:
+1. **when** to request chunk  
+    prevent buffer starvation or overflow, digestion control
+2. **what** encoding rate to request  
+    higher quality when more bandwidth available
+3. **where** to request chunk  
+    The different versions of video are copied to several servers, DASH choose the server that can minimize delay for client. 
+
+### Content Distribution Networks(CDN)
+
+## CH3 Transport Layer
+
+### The difference between Transport Layer and Network Layer
+The transport layer protocol provides logical communication **from process to process**, while the network layer provides **from host to host**.  
+Noted that there is a large amount of processes running on a host. In household analogy, Ann wants to sent a message to Bill.First, Ann has to **mux** her message and bring it to the mail box of her house. Then, the mailman bring all the messages in the mail box to another house's mailbox. Finally, Bill check his house's mailbox and **demux** the message.  
+transport layer protocol = Ann and Bill who mux and demux the messages.  
+network layer protocol = postal service between houses.  
+
+### multiplexing and demultiplexing
+**multiplexing at sender**: add tronsport header  
+**demultiplexing at receiver**: look into header info to deliver received segments to the right socket  
+#### connectionless demux
+1. UDP socket identified by two tuple:  
+    `(destination IP address, destination port number)`  
+    Connectionless refers to not knowing the source of message.
+2. When host receives UDP segment:  
+    directs UDP segment to socket with that port number, leading to IP datagram from different source might be directed to same socket.  
+![](https://i.imgur.com/sQg7H6C.png)
+
+#### connection-oriented demux
+1. TCP socket identified by 4-tuple:  
+    `(source IP address, source port number, destination IP address, destination port number)`
+![](https://i.imgur.com/qXbdPwd.png)  
+
+### UDP revisit
+#### UDP
+1. low delay
+    1. connectionless - no connection establishment
+    2. no congestion control - as fast as desired
+    3. small header size
+2. reasonable reliability if needed
+    1. can add reliabiliy at application layer
+    2. there is a **checksum** value in UDP segment so that the errors in transmitted segment can be detected and hence be tackled with some error recovery techniques.
 
 
+### Reliable Data Transfer(rdt)
+### rdt 1.0
+![](https://i.imgur.com/rJoxZ54.png)  
+The basic assupmtion of this method is that the transfer is totally reliable and there are no data loss, which is unrealistic in most of the situation  
+### rdt 2.0
+RDT 2.0 uses "checksum" to detect **bit errors**.
+After receiving packet, the receiver will send a message back to indicate whether data loss has happened(NAKs) or not(ACKs). If NAKs is sent back, the sender will then resend the same packet until receiving ACKs.  
+There are two states for sender. After being called, the sender sends the packet and transits to another state to wait for receiver's response. The sender can't escape this state until receiving ACK, which is known as **stop-and-wait** If a NAK is received, sender resends packet and keep waiting in the same state.  
+![](https://i.imgur.com/n8iklM3.png)  
+![](https://i.imgur.com/dwuyAcM.png)  
+**what if the feedback from receiver is corrupted?**
+
+### rdt 2.1
+To address with the possibilty that the feedback might be corrupted.
+How to address:
+1. checksum for ACK/NAK  
+2. retransmit ACK/NAK if corrupted
+3. sender adds sequence number to each packet
+4. receiver will ignore duplicate package if there is no bit error and the sequence number is the same as the previous downloaded package. Then receiver keep retransmiting the ACK message until sender stop sending packet(which means the ACK message is not corrupted).  
+![](https://i.imgur.com/drPto7z.png)  
+
+**what if the whole packet is missing?**
+
+### rdt 3.0
+Inheriting from rdt 2.2, rdt 3.0 still have checksum and sequence number to address the problem of bit error and duplicate packet.  
+**In rdt 3.0, sender waits reasonable amount of time for ACK(timeout) and retransmit the packet if no ACK is received until countdown is over.**  
+![](https://i.imgur.com/iUjQzhY.png)  
+Noted that on the upper right corner, when the packet is corrupted or wrong ACK is received, we used to resend the packet, but we choose to do nothing this time. In fact, waiting for timeout might not be the best solution, and resending the packet immediately sounds fantastic but tradeoff something as the following mentioned.
+![](https://i.imgur.com/VzH57X2.png)  
+Considering the following case, the ack1 response takes unusual long time, exceeding the timeout, and the sender just resends packet1 as soon as the timeout is over. Then, the delayed ACK1 arrives, making sender think that the packet1 is sent successfully, and hence keeps sending packet0. Because sender just resends the packet1, receiver checks the sequence number and knows that the last ACK1 might loss, and hence resend ACK1 to sender. The sender sending the packet0 ends up receiving ACK1, which is a negative feedback. However, **sender keep ignoring it until timeout**. While sender still waits, the ACK0 arrives.
+![](https://i.imgur.com/bSBHZmZ.png)  
+If the rdt3.0 works like rdt2.2, sender retransmits immediately when receiving the NAK or corrupted feedback. **There is an extra package0 retransmit comparing the previous example under the ignoring until timeout mechanism, indicating the tradeoff between shortening the communication time and saving bandwidths.**
+
+#### performance of rdt3.0
+There are propagation delay and transmission delay that leads to the bad utilization rate of rdt3.0.  
+Throughput on 1Gbps link is around 270 kbps(not even enough for streaming)  
+The solution for increasing utilization is pipelining, which sends a lot of packages consecutively.  
+![](https://i.imgur.com/751AUHF.png)
+### Pipelining
+Send multiple packages at the same time, allowing "in flight" packages.
+However, the pipelining might post challenge to existed mechanism.
+1. Sequence number  
+    Sequence number is used to identify different packages. With the packets number increasing, it is necessary to increase the sequence number.
+2. Buffering at receiver and sender  
+    Noted that when a packet is sent, the sender/receiver has to wait for the ACKs. If the packet is corrupted or timeout, they have to **resend** the packet. Hence, there must be a buffer storing all the in flight packets so that they can be resent when needed.
+### Go-Back N(GBN)
+
+
+### GBN V.S. SR
+
+
+|     | Go-Back N | Selective Repeat |
+| --- | --------- | ---------------- |
+|   Resend  |   Resend all the packet with previous sequence number| Resend packet for which ACK not received             |
+|   Buffer  | Receiver don't need to buffer the received pakets |  Receiver has to buffer the **out of order** packets, waiting for eventually in-order delivery to upper layer      |
+|     |           |                  |
+|     | Text      | Text             |
+
+### Quiz 22
+![](https://i.imgur.com/aPc06Nj.png)  
+1. Seletive repeat. When sending error happens, BGN has to resend all of the previous packets, which is bandwidth-consuming
+
+
+### TCP
+In rdt, we count the data by "packet number", but in TCP, we count the data by "bytes".
+![](https://hackmd.io/_uploads/B1YJrKoEh.png)
+
+
+![](https://hackmd.io/_uploads/HJgLdOsN2.png)  
+
+![](https://hackmd.io/_uploads/H1hNuuiVn.png)  
+1. t1: Arrival of in-order segment with expected seqence number & no corruption & not filling the gap of sequence order & there is no pending ACK  
+    1. TCP receiver delays ACK, starting timer for next segment.
+    2. Set pending value to true, meaning that there is one ACK waited to be sent.
+2. t2: not filling the gap of sequence order & there is a pending ACK.  
+    1. Send the ACK of the oldest received packet immediately to acknowledge the sender that both of the packets are received.
+    2. Remove the timer since there is no pending ACK now.
+3. t3: Arrival of out-order segment filling the gap of sequence order.  
+    1. if gap is partially filled, send the packet with the sequence number start at current the lowest end of the gap immediately. If the gap is completely filled, send the next expected sequence number.
+
+
+4. t4: Else, send the **duplicated ACK** and remove the corresponding timer.
+
+
+How the delayed ACK work?  
+When the sender receives the delayed ACK, he can be sure that the previous sent packets are ACKed althought he didn't receive the respective ACK because if the first packet is missing through the tranfer and the second packet arrives, the receiver consider the packet out of order and will send back **duplicated ACK** instead of sending back the ACK corresponding to the second packet. Hence, the only explanation for the sender receiving the ACK number higher than some of the unACKed packet is that the previous packets are also acknowledged by the receiver.
+
+Why not delayed all the ACK?  
+Extra buffer space for storing the delayed ACK is needed, which forms a trade-off between saving bandwidth by reducing the ACK package sent and saving memory space, and it might not saving the bandwith as well because during the waiting time, the sender might resend the packets.
+
+#### TCP fast retransmit
+If the sender received three duplicate ACKs for same data, then the sender will ignore the timeout interval and resend the unACKed segment with smallest sequence number(very likely the lost segment)  
+**This mechanism can address with the relatively long process of time-out period.**
+![](https://hackmd.io/_uploads/HJUsk624h.png)  
+
+#### TCP three way handshake to establish connection
+To establish TCP connection, three packets are needed to sent between sender and receiver, hence the mechanism is referred to three-way handshake.
+1. The sender send IP datagram with a TCP segment where a SYN flag set to 1 to server. The sequence number is randomly chose by the sender so that the connection will not be interjected by hacker.
+2. Onece the receiver decides to establish connection, it sends back an TCP segment with acknowledgement number set to **client_initial_sequence_number + 1**, distinguished itself from other fake response, and also randomly chooses a sequence number(server_isn).
+3. On receiving the SYNACK data, the sender start sending data to server by **setting the acknowlegment number to server_isn + 1**.
+
+![](https://hackmd.io/_uploads/BJsqvah4h.png)  
+
+
+### TCP flow control
+![](https://hackmd.io/_uploads/rJEz_xIS2.png)  
+The packets extracted by the receivers do not go directly to the application. Instead, they are stored in the TCP receiver buffer. However, if the rate of application removing data from buffer lower than the TCP receiver extracting the packets to buffer, the buffer space will be more and more occupied, leading to the subsequent data drop. Hence, the flow control is needed to avoid buffer space overflow.  
+Receiver inform the free buffer space to the sender by the **rwnd value** in TCP header. The sender limits amount of unACKed data to the rwnd correspondingly, guaranteeing that buffer will not overflow.
+
+### TCP congestion control algorithm
+#### Congestion control approaches
+1. End-to-end(used by TCP):  
+    End-systems observes packet loss(duplicate ACKs or timeout retransmission), infering explicit rate/bandwidth by trying and failing(speed up and slow down).
+2. Network-assisted:  
+    Routers observe the queue size and free buffer space directly, being able to tell the explicit rate. If sender sends at the same rate that routers indicates, congestion issues are solved.
+#### TCP AIMD(Additive Increase & Multiplicative Decrease)
+1. AI: Increase the congestion window size(cwnd) by one every runtime.
+2. MD: Cut the window size in half after loss occurs.
+
+By limiting congestion window size, the sender can limit transmission rate. CWND decides the number of package-in-flight.
+
+#### TCP slow start
+At the begining of TCP connection, cwnd increase exponentially(double it every runtime!) **until first loss event.**  
+The slow start refers to the fact the cwnd initialized as 1, but the cwnd ramps up exponentially.  
+
+#### TCP reacting to losses
+There are different ways to deal with loss detections:
+1. Fast retransmit:  
+    After receiving three duplicate ACKs, the sender will retransmit immediately. TCP RENO addresses this kind of loss by AIMD.
+2. Timeout:  
+    When timeout occurs, cwnd is cut down to one and **grows exponentially to a threshold**, then grows linearly after reaching threshold. Noted that threshold is open to adjustments.
+
+3. TCP Tahoe:  
+    Always set the cwnd to 1 regardless of the type of loss detection.
+![](https://hackmd.io/_uploads/ryrkQil82.png)
+
+## Network Layer
+### Overview
+Network layer is responsible for the packet tranportation from one host to another, going through the routers and finally reach the receiveing host. Noted that every router is running the network layer protocols as well.  
+
+### Network layer functions
+1. Routing / Control plane  
+    Decide the source to destination of the packets, underlying some routing algorithms. There are two control plane approaches: 
+    1. traditional routing algo:  
+        The routing algo is runned by the router itself.   
+    2. software defined networking(SDN approach):  
+        The routing algo is outsourced to some powerful servers to do the calculation remotely.  
+2. Forwarding / Data plane  
+    After recieving the forwarding table, network layer should move packets from router input to specific router output. The router first checks the table, matching the heading of packets and decides the output port for the packet.
+
+#### The traditional routing approach
+![](https://hackmd.io/_uploads/rJMMZOnL3.png)  
+The routers contain both routing and forwarding approaches.
+
+#### Software Defined Networking approach(SDN)
+![](https://hackmd.io/_uploads/HJOezu2L2.png)  
+The remote controller in the remote server executes the routing algo. Because the RC dont know the information about routers, the control agent(CA) is needed as intermidiates. The CA passes necessary info to the CA, and after receiving forwarding table from CA, it then sends the table to the router.  
+
+### Switching Fabric
+
+Traditionally, the speed of packets sending is limited by memory bandwidth
+    
+### IP fragmentation
+The MTU(maximum transmission unit) of every link might be different because each link may use disparate link layer protocols. In order to tranfer the IP datagram successfully throughout the route, it is necessary to fragment the IP datagram into small fragments.
+The IPv4 use length, ID, flag, offset to divide and reassemble the fragmented datagram.  
+![](https://hackmd.io/_uploads/Hkut7xiv3.png)
+**Noted that the reassembly happens only on the end system.**
+#### Reassembly of IP fragment
+![](https://hackmd.io/_uploads/S1TyElswh.png)
+1. ID iditentify the same IP datagram that the smaller datagram belongs to.
+2. Flag indicates if this is the last piece of IP datagram: 1 means false while 0 means true.
+3. The offset number is the bit position of the original and undivided datagram. The reassembly can be easily done by sort the smaller datagrams by the offset number in numarical order, and then merge all the datagrams.
